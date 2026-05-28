@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GrowOS — AI Growth Operating System</title>
+<meta name="description" content="GrowOS is an AI-powered digital growth platform for Indian SMBs. Generate brand analysis, content plans, captions, ad strategies, and festival campaigns in minutes.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Mono:wght@300;400;500&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/main.css">
+</head>
+<body>
+
+<!-- Publish Confirmation Modal -->
+<div id="confirm-modal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="modal-title" style="display:none;">
+  <div class="modal-box">
+    <div class="modal-icon">🚀</div>
+    <div class="modal-title" id="modal-title">Confirm Publish</div>
+    <div class="modal-body" id="modal-body"></div>
+    <div class="modal-actions">
+      <button class="modal-btn cancel" id="modal-cancel" onclick="closeModal()">Cancel</button>
+      <button class="modal-btn confirm" id="modal-confirm">Publish Now</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast Container -->
+<div id="toast-container" aria-live="polite" aria-atomic="true"></div>
+
+<!-- Sidebar -->
+<aside class="sidebar">
+  <div class="logo">
+    <div class="logo-mark">GrowOS</div>
+    <div class="logo-sub">AI Growth OS · v2.0</div>
+  </div>
+  <nav class="nav" role="navigation">
+    <div class="nav-item active" onclick="switchPanel('chat',this)" id="nav-chat" tabindex="0" role="button" aria-current="page">
+      <span class="nav-icon" aria-hidden="true">💬</span>
+      GrowOS Chat
+    </div>
+    <div class="nav-item" onclick="switchPanel('post',this)" id="nav-post" tabindex="0" role="button">
+      <span class="nav-icon" aria-hidden="true">📮</span>
+      Post Manager
+    </div>
+    <div class="nav-item" onclick="switchPanel('history',this)" id="nav-history" tabindex="0" role="button">
+      <span class="nav-icon" aria-hidden="true">📋</span>
+      Publish History
+    </div>
+  </nav>
+  <button class="new-chat-btn" id="new-chat-btn" onclick="startNewChat()">+ New conversation</button>
+  <div class="sidebar-footer">
+    <div class="api-status">
+      <div class="dot" id="api-dot"></div>
+      <span id="api-status-text">Checking...</span>
+    </div>
+  </div>
+</aside>
+
+<!-- Main -->
+<main class="main" role="main">
+  <div class="topbar">
+    <div class="page-title" id="page-title">GrowOS Chat</div>
+    <div style="display:flex;align-items:center;gap:16px;">
+      <div class="progress-indicator" id="progress-area" style="display:none;" aria-label="Setup progress">
+        <div class="progress-bar-container">
+          <div class="progress-bar-fill" id="progress-bar" style="width:0%" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+        </div>
+        <span class="progress-text" id="progress-text">0%</span>
+      </div>
+      <span class="badge-free">FREE TIER · GEMINI</span>
+    </div>
+  </div>
+
+  <!-- Chat Panel -->
+  <div id="panel-chat" class="panel active">
+    <div class="chat-messages" id="chat-messages" role="log" aria-live="polite" aria-label="Chat messages"></div>
+    <div class="chat-input-container">
+      <div class="chat-input-wrapper">
+        <textarea id="chat-input" rows="1" placeholder="Type your message..." aria-label="Chat message" onkeydown="handleInputKey(event)"></textarea>
+        <button class="send-btn" id="send-btn" onclick="sendMessage()" aria-label="Send message">
+          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M22 2L11 13" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M22 2L15 22L11 13L2 9L22 2Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Post Manager Panel -->
+  <div id="panel-post" class="panel">
+    <div class="post-manager">
+      <div class="empty-post-state" id="empty-post-state">
+        <div class="icon" aria-hidden="true">📮</div>
+        <div class="empty-title">Post Manager</div>
+        <div class="empty-desc">Complete a conversation in GrowOS Chat first to generate content. Then come here to publish posts to Instagram, Facebook, or X.</div>
+      </div>
+      <div id="post-manager-content" style="display:none;">
+        <div class="section-heading">Publish Content</div>
+        <div class="post-preview">
+          <div class="rc-label">Post Caption</div>
+          <textarea class="post-caption-select" id="post-caption" placeholder="Select or edit your caption..." aria-label="Post caption"></textarea>
+          <div class="rc-label" style="margin-top:12px;margin-bottom:8px;">Quick Select Caption</div>
+          <div id="caption-quick-select" style="display:flex;flex-direction:column;gap:6px;"></div>
+        </div>
+
+        <!-- Image Search -->
+        <div class="image-search-section">
+          <div class="rc-label" style="margin-bottom:8px;">Find an Image (Unsplash)</div>
+          <div class="image-search-row">
+            <input id="unsplash-query" type="text" class="unsplash-input" placeholder="e.g. coffee shop, fashion, food..." aria-label="Image search query">
+            <button class="search-img-btn" id="search-img-btn" onclick="searchImages()">🔍 Search</button>
+          </div>
+          <div id="image-results" class="image-results"></div>
+          <div id="selected-image-preview" class="selected-image-preview" style="display:none;">
+            <div class="rc-label">Selected Image</div>
+            <img id="selected-img" src="" alt="Selected post image" style="width:100%;border-radius:10px;margin-top:6px;">
+            <button class="remove-img-btn" onclick="removeImage()">✕ Remove</button>
+          </div>
+        </div>
+
+        <div class="rc-label" style="margin-bottom:8px;">Select Platforms</div>
+        <div class="platform-toggles" id="platform-toggles" role="group" aria-label="Social media platforms">
+          <div class="platform-toggle" data-platform="instagram" onclick="togglePlatform(this)" tabindex="0" role="checkbox" aria-checked="false">📸 Instagram</div>
+          <div class="platform-toggle" data-platform="facebook" onclick="togglePlatform(this)" tabindex="0" role="checkbox" aria-checked="false">📘 Facebook</div>
+          <div class="platform-toggle" data-platform="twitter" onclick="togglePlatform(this)" tabindex="0" role="checkbox" aria-checked="false">𝕏 Twitter / X</div>
+        </div>
+        <button class="post-btn" onclick="confirmPublish()" id="publish-btn">🚀 Publish Now</button>
+        <div class="post-results" id="post-results" aria-live="polite"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Publish History Panel -->
+  <div id="panel-history" class="panel">
+    <div class="post-manager">
+      <div class="section-heading">Publish History</div>
+      <div id="history-list" class="history-list">
+        <div class="empty-post-state">
+          <div class="icon" aria-hidden="true">📋</div>
+          <div class="empty-title">No posts yet</div>
+          <div class="empty-desc">Your publish history will appear here after you post content.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<script src="js/app.js"></script>
+</body>
+</html>
